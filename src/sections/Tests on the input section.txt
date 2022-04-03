@@ -1,0 +1,11 @@
+For the activity-label input:
+- You should only be able to submit alphanumeric values
+- Activity labels with spaces need a special implementation or a different error toast.
+
+For the time-spent-on-activity input:
+- You should only be able to submit numeric values
+- You should be able to submit float values as well but only up to 2 decimal points.
+- You should only be able to submit POSITIVE values that sum up to a total of 24 (for 24 hours)
+
+For the entire form:
+- I should only be allowed to submit when both the label input and the time input have been filled.

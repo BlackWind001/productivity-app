@@ -1,0 +1,4 @@
+The activity-label input field should be both an input field as well as a dropdown that lists
+the previously mentioned activities.
+
+Introduce activity categories
