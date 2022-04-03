@@ -35,6 +35,10 @@ class CurrentDayDataManipulationService {
                 throw new Error('Activity should be a string with alphanumeric character(s) only')
             }
 
+            if (activity.toLowerCase() === 'unallocated') {
+                throw new Error('unallocated is a keyword. You cannot use that as an activity label');
+            }
+
             if (!(typeof timeSpent === 'number')) {
                 throw new Error('The time spent should be a number');
             }
@@ -43,20 +47,24 @@ class CurrentDayDataManipulationService {
                 throw new Error('Time spent on an activity should be a valid value i.e. greater than zero and less than 24.');
             }
 
+            let totalTimeSpent;
             // Check to see if total time spent which is the sum of the time
             // spent on all activities today is less than or equal to 24
             (() => {
                 const todayActivities = Object.keys(this.todaysData);
-                let totalTimeSpent = 0;
 
                 // remove unallocated time from this calculation
-                const unallocated = todayActivities.indexOf('unallocated');
-                unallocated && todayActivities.splice(index, 1);
+                const unallocatedIndex = todayActivities.indexOf('unallocated');
+                (unallocatedIndex !== -1) && todayActivities.splice(unallocatedIndex, 1);
 
                 // calculate the sum of the remaining time spent on activities
-                todayActivities.reduce((previousValue, singleActivity) => {
+                totalTimeSpent = todayActivities.reduce((previousValue, singleActivity) => {
+                    // They might be modifying an existing value
+                    if (singleActivity === activity) {
+                        return previousValue;
+                    }
                     return previousValue + this.todaysData[singleActivity].timeSpent;
-                }, totalTimeSpent);
+                }, 0);
 
                 totalTimeSpent += timeSpent;
 
@@ -64,20 +72,21 @@ class CurrentDayDataManipulationService {
                     throw new Error('Your current entry adds up to a negative total time spent in your day. Please re-enter a valid value.');
                 }
 
-                if(totalTimeSpent >= 24) {
+                if(totalTimeSpent > 24) {
                     throw new Error('Your current entry exceeds the total time spent to more than 24 hours. Please re-enter a valid value.')
                 }
             })();
 
             // Updating today's data in memory.
             this.todaysData[activity] = { timeSpent: (Math.round(timeSpent*100)/100) };
+            this.todaysData['unallocated'] = { timeSpent: (24 - totalTimeSpent) };
             this.shouldWrite = true;
 
             return Promise.resolve();
         }
         catch (err) {
             // TO-DO: Handle different error cases
-            return Promise.reject();
+            return Promise.reject(err);
         }
     }
 

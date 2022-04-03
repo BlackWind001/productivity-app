@@ -1,24 +1,18 @@
 import React from "react";
 import ChartSection from "./sections/ChartSection";
 import InputSection from "./sections/InputSection";
+import CurrentDayDataManipulationService from "./services/CurrentDayDataManipulationService";
 
 function convertToChartDataStructure (productivityData) {
   const labels = Object.keys(productivityData);
 
-  if (labels.length >= 0) {
-    const data = labels.map((label) => {
-      return productivityData[label];
-    })
-
-    return {
-      labels,
-      datasets: [{ data }]
-    };
-  }
+  const data = labels.map((label) => {
+    return productivityData[label].timeSpent;
+  })
 
   return {
-    labels: '',
-    datasets: [{ data: [] }]
+    labels,
+    datasets: [{ data }]
   };
 }
 
@@ -26,27 +20,43 @@ class App extends React.Component {
   constructor () {
     super();
     
+    const { todaysData } = CurrentDayDataManipulationService;
+
     this.state = {
-      productivityData: {}
+      todaysData
     }
 
     this.updateProductivityData = this.updateProductivityData.bind(this);
   }
 
+  // updatedData is of the form { activityLabel, timeSpentOnActivity }
   updateProductivityData (updatedData) {
-    const { activityLabel, timeSpentOnActivity } = updatedData;
-    const updatedProductivityData = this.state.productivityData;
+    let { activityLabel, timeSpentOnActivity } = updatedData;
 
-    updatedProductivityData[activityLabel] = timeSpentOnActivity;
+    try {
+      timeSpentOnActivity = parseFloat(timeSpentOnActivity);
+    }
+    catch (e) {
+      timeSpentOnActivity = '';
+    }
 
-    this.setState({ productivityData: updatedProductivityData });
+    CurrentDayDataManipulationService.updateData({ activity: activityLabel, timeSpent: timeSpentOnActivity })
+    .then(() => {
+      const { todaysData } = CurrentDayDataManipulationService;
+      this.setState({
+        todaysData
+      });
+    })
+    .catch((err) => {
+      alert(err);
+    })
   }
 
   render () {
     console.log('App component rendering occurred');
     return (
       <>
-        <ChartSection data={convertToChartDataStructure(this.state.productivityData)} />
+        <ChartSection data={convertToChartDataStructure(this.state.todaysData)} />
         <InputSection
           handleUpdate={this.updateProductivityData}
         />
